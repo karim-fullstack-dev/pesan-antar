@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#FFC41F">
+
+    <!-- Judul tab dan logo diisi otomatis dari app.js (namaUsaha) -->
+    <title>UMKM Food | Pesan Makanan</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- NAVBAR -->
+    <header class="navbar">
+        <h2 class="logo" id="logo">UMKM Food<span>.</span></h2>
+
+        <nav>
+            <a href="#home">Home</a>
+            <a href="#menu">Menu</a>
+            <a href="#info">Info</a>
+        </nav>
+
+        <div class="nav-actions">
+            <button class="cart-btn" onclick="lihatKeranjang()">
+                Pesanan <span id="cart-count">0</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- HERO -->
+    <section class="hero" id="home">
+        <div class="hero-text">
+            <h1>Pesan dari HP,<br>ambil di tempat.</h1>
+
+            <p>
+                Pilih menu, kirim pesananmu lewat WhatsApp, lalu ambil.
+                Tanpa daftar akun, tanpa antre lama.
+            </p>
+
+            <div class="hero-actions">
+                <a href="#menu" class="primary-btn">Lihat menu</a>
+                <a href="#cara" class="ghost-btn">Cara pesan</a>
+            </div>
+        </div>
+
+        <!-- Ganti foto di bawah dengan foto makananmu sendiri -->
+        <div class="hero-visual">
+            <img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=900" alt="Hidangan makanan">
+        </div>
+    </section>
+
+    <!-- CARA PESAN -->
+    <section class="steps-section" id="cara">
+        <div class="steps">
+            <div class="step">
+                <strong>1</strong>
+                <div>
+                    <h3>Pilih menu</h3>
+                    <p>Tekan "+ Tambah" pada menu yang kamu mau.</p>
+                </div>
+            </div>
+
+            <div class="step">
+                <strong>2</strong>
+                <div>
+                    <h3>Kirim lewat WhatsApp</h3>
+                    <p>Isi nama, lalu tekan kirim pesanan.</p>
+                </div>
+            </div>
+
+            <div class="step">
+                <strong>3</strong>
+                <div>
+                    <h3>Ambil di tempat</h3>
+                    <p>Ambil pesananmu setelah dikonfirmasi.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- MENU (daftar menu diisi otomatis dari app.js) -->
+    <section class="menu-section" id="menu">
+
+        <div class="section-heading">
+            <div>
+                <h2>Daftar menu</h2>
+                <p>Tekan "+ Tambah" untuk memasukkan ke pesanan.</p>
+            </div>
+
+            <input type="text" id="search" placeholder="Cari menu" aria-label="Cari menu">
+        </div>
+
+        <div class="categories">
+            <button class="category active" data-category="all">Semua</button>
+            <button class="category" data-category="makanan">Makanan</button>
+            <button class="category" data-category="minuman">Minuman</button>
+            <button class="category" data-category="camilan">Camilan</button>
+        </div>
+
+        <div class="products" id="products"></div>
+    </section>
+
+    <!-- PESANAN -->
+    <section class="cart-section" id="keranjang">
+        <h2>Pesanan kamu</h2>
+
+        <div class="cart-layout">
+            <div class="cart-list">
+                <div id="cart-items">
+                    <p>Keranjang masih kosong.</p>
+                </div>
+            </div>
+
+            <div class="cart-side">
+                <h3>Total <span id="total">Rp0</span></h3>
+
+                <div class="order-form">
+                    <label for="nama">Nama</label>
+                    <input type="text" id="nama" placeholder="Nama kamu" autocomplete="name">
+
+                    <label for="jam">Jam ambil (boleh dikosongkan)</label>
+                    <input type="text" id="jam" placeholder="Misal: 12.30">
+
+                    <label for="catatan">Catatan</label>
+                    <textarea id="catatan" placeholder="Misal: tidak pakai pedas"></textarea>
+                </div>
+
+                <button class="checkout-btn" onclick="checkout()">
+                    Kirim pesanan via WhatsApp
+                </button>
+
+                <a class="cs-link" data-cs href="#" target="_blank" rel="noopener">
+                    Ada pertanyaan? Tanya admin via WhatsApp
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- INFO (alamat dan jam buka diisi otomatis dari app.js) -->
+    <section class="about" id="info">
+        <h2>Ambil pesananmu di sini</h2>
+
+        <div class="info-blocks">
+            <p id="info-alamat"></p>
+            <p id="info-jam"></p>
+        </div>
+
+        <a class="cs-btn" data-cs href="#" target="_blank" rel="noopener">
+            Tanya admin via WhatsApp
+        </a>
+    </section>
+
+    <footer>
+        <p id="footer-text">© 2026 ZEALO Food. All Rights Reserved.</p>
+    </footer>
+
+    <!-- Tombol pesanan melayang (muncul di HP saat keranjang berisi) -->
+    <div class="floating-cart" id="floating-cart" onclick="lihatKeranjang()">
+        <span><span id="float-count">0</span> item</span>
+        <strong id="float-total">Rp0</strong>
+        <span>Lihat pesanan</span>
+    </div>
+
+    <script src="server.js"></script>
+
+    <script>
+        // Tombol "Tanya admin": membuka chat WhatsApp ke nomor di PENGATURAN (app.js)
+        document.querySelectorAll("[data-cs]").forEach(function (tautan) {
+            if (typeof PENGATURAN === "undefined") return;
+
+            var pesan = "Halo " + PENGATURAN.namaUsaha + ", saya mau tanya sesuatu.";
+
+            tautan.href = "https://wa.me/" + PENGATURAN.nomorWhatsApp +
+                "?text=" + encodeURIComponent(pesan);
+
+            tautan.addEventListener("click", function (e) {
+                if (!/^62\d{8,13}$/.test(PENGATURAN.nomorWhatsApp)) {
+                    e.preventDefault();
+                    alert("Nomor WhatsApp usaha belum diisi dengan benar di app.js.");
+                }
+            });
+        });
+    </script>
+</body>
+</html>
