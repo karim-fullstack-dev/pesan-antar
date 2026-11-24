@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#FFC41F">
 
-    <!-- Judul tab dan logo diisi otomatis dari app.js (namaUsaha) -->
+    <!-- Judul tab dan logo diisi otomatis dari server.js (namaUsaha) -->
     <title>UMKM Food | Pesan Makanan</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -23,7 +23,8 @@
         <nav>
             <a href="#home">Home</a>
             <a href="#menu">Menu</a>
-            <a href="#info">Info</a>
+            <a href="#premium">Premium</a>
+            <a href="#info">Lokasi</a>
         </nav>
 
         <div class="nav-actions">
@@ -84,7 +85,7 @@
         </div>
     </section>
 
-    <!-- MENU (daftar menu diisi otomatis dari app.js) -->
+    <!-- MENU (daftar menu diisi otomatis dari server.js) -->
     <section class="menu-section" id="menu">
 
         <div class="section-heading">
@@ -118,6 +119,22 @@
             </div>
 
             <div class="cart-side">
+                <!-- Rincian biaya -->
+                <div class="rincian">
+                    <div class="rincian-baris">
+                        <span>Subtotal</span>
+                        <span id="subtotal">Rp0</span>
+                    </div>
+                    <div class="rincian-baris" id="baris-layanan" hidden>
+                        <span>Biaya layanan</span>
+                        <span id="biaya-layanan">Rp0</span>
+                    </div>
+                    <div class="rincian-baris diskon" id="baris-diskon" hidden>
+                        <span>Diskon premium</span>
+                        <span id="diskon">−Rp0</span>
+                    </div>
+                </div>
+
                 <h3>Total <span id="total">Rp0</span></h3>
 
                 <div class="order-form">
@@ -129,6 +146,10 @@
 
                     <label for="catatan">Catatan</label>
                     <textarea id="catatan" placeholder="Misal: tidak pakai pedas"></textarea>
+
+                    <label for="kode">Kode member premium (opsional)</label>
+                    <input type="text" id="kode" placeholder="Misal: PLUS001" autocomplete="off" autocapitalize="characters">
+                    <p class="kode-status" id="kode-status"></p>
                 </div>
 
                 <button class="checkout-btn" onclick="checkout()">
@@ -142,7 +163,47 @@
         </div>
     </section>
 
-    <!-- INFO (alamat dan jam buka diisi otomatis dari app.js) -->
+    <!-- PAKET PREMIUM (isi angka diambil otomatis dari server.js) -->
+    <section class="premium-section" id="premium">
+        <div class="section-heading">
+            <div>
+                <h2>Paket premium</h2>
+                <p>Sering pesan? Berlangganan biar lebih hemat.</p>
+            </div>
+        </div>
+
+        <div class="plans">
+            <div class="plan">
+                <h3>Reguler</h3>
+                <p class="plan-harga">Gratis</p>
+                <ul>
+                    <li>Pesan tanpa daftar akun</li>
+                    <li id="reguler-layanan">Biaya layanan</li>
+                    <li>Ambil di tempat</li>
+                </ul>
+            </div>
+
+            <div class="plan plan-premium">
+                <span class="plan-label">Paling hemat</span>
+                <h3 id="premium-nama">Premium</h3>
+                <p class="plan-harga">
+                    <span id="premium-harga">Rp0</span>
+                    <small id="premium-masa">per bulan</small>
+                </p>
+                <ul>
+                    <li>Bebas biaya layanan</li>
+                    <li id="premium-diskon">Diskon</li>
+                    <li>Kode member untuk dipakai saat memesan</li>
+                </ul>
+                <a class="primary-btn" id="beli-premium" href="#" target="_blank" rel="noopener">
+                    Berlangganan via WhatsApp
+                </a>
+            </div>
+        </div>
+        <p class="plan-catatan">Setelah pembayaran dikonfirmasi admin, kamu akan menerima kode member. Masukkan kode itu di kolom "Kode member" pada form pesanan.</p>
+    </section>
+
+    <!-- INFO + PETA (alamat, jam buka, dan peta diisi otomatis dari server.js) -->
     <section class="about" id="info">
         <h2>Ambil pesananmu di sini</h2>
 
@@ -151,9 +212,19 @@
             <p id="info-jam"></p>
         </div>
 
-        <a class="cs-btn" data-cs href="#" target="_blank" rel="noopener">
-            Tanya admin via WhatsApp
-        </a>
+        <div class="peta-wadah">
+            <iframe id="peta" title="Peta lokasi pengambilan pesanan"
+                loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+        </div>
+
+        <div class="info-aksi">
+            <a class="cs-btn" id="rute" href="#" target="_blank" rel="noopener">
+                Buka rute di Google Maps
+            </a>
+            <a class="cs-btn cs-btn-gelap" data-cs href="#" target="_blank" rel="noopener">
+                Tanya admin via WhatsApp
+            </a>
+        </div>
     </section>
 
     <footer>
@@ -170,7 +241,7 @@
     <script src="server.js"></script>
 
     <script>
-        // Tombol "Tanya admin": membuka chat WhatsApp ke nomor di PENGATURAN (app.js)
+        // Tombol "Tanya admin": membuka chat WhatsApp ke nomor di PENGATURAN (server.js)
         document.querySelectorAll("[data-cs]").forEach(function (tautan) {
             if (typeof PENGATURAN === "undefined") return;
 
@@ -182,7 +253,7 @@
             tautan.addEventListener("click", function (e) {
                 if (!/^62\d{8,13}$/.test(PENGATURAN.nomorWhatsApp)) {
                     e.preventDefault();
-                    alert("Nomor WhatsApp usaha belum diisi dengan benar di app.js.");
+                    alert("Nomor WhatsApp usaha belum diisi dengan benar di server.js.");
                 }
             });
         });
