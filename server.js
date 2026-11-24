@@ -9,7 +9,38 @@ const PENGATURAN = {
     nomorWhatsApp: "6283146357084",
 
     alamat: "Isi alamat tempat ambil pesanan di sini",
-    jamBuka: "Setiap hari, 09.00 - 21.00"
+    jamBuka: "Setiap hari, 09.00 - 21.00",
+
+    // ---------- PETA ----------
+    // Cara dapat koordinat: buka Google Maps, tekan lama di lokasi usahamu,
+    // lalu salin dua angka yang muncul (lintang, bujur).
+    // Angka di bawah baru contoh (sekitar Prabumulih), ganti dengan lokasi usahamu.
+    lokasi: {
+        lintang: -3.4326,
+        bujur: 104.2358
+    },
+
+    // ---------- BIAYA LAYANAN ----------
+    // Biaya layanan = persen dari subtotal, tapi tidak kurang dari minimum
+    // dan tidak lebih dari maksimum. Isi persen 0 untuk mematikan biaya layanan.
+    biayaLayanan: {
+        persen: 5,
+        minimum: 1000,
+        maksimum: 5000
+    },
+
+    // ---------- PAKET PREMIUM ----------
+    // Member premium: bebas biaya layanan + diskon persen dari subtotal.
+    // kodeMember: daftar kode yang kamu berikan ke pelanggan setelah mereka bayar.
+    // Catatan: kode ini bisa dilihat siapa pun yang membuka kode situsnya.
+    // Cukup untuk usaha kecil, tapi untuk keamanan penuh nanti perlu server.
+    premium: {
+        nama: "ZEALO Plus",
+        harga: 29000,
+        masaBerlaku: "per bulan",
+        diskonPersen: 5,
+        kodeMember: ["PLUS001", "PLUS002"]
+    }
 };
 
 /* DAFTAR MENU
@@ -23,16 +54,16 @@ const MENU = [
     {
         id: 1,
         nama: "Nasi Goreng Spesial",
-        harga: 18000,
+        harga: 16000,
         kategori: "makanan",
         foto: "https://images.unsplash.com/photo-1512058564366-18510be2db19?w=600"
     },
     {
         id: 2,
-        nama: "Nasi Padang",
-        harga: 25000,
+        nama: "Nasi padang",
+        harga: 12000,
         kategori: "makanan",
-        foto: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600"
+        foto: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQoCiAR34z47QhoIHwgkHrUl_slQrj__a8FY6Wk8ep2eRRi_t03sQp9Nrw&s=10"
     },
     {
         id: 3,
@@ -44,10 +75,17 @@ const MENU = [
     {
         id: 4,
         nama: "Kentang Goreng",
-        harga: 13000,
+        harga: 10000,
         kategori: "camilan",
         foto: "https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=600"
-    }
+    },
+    {
+        id: 5,
+        nama: "Ayam geprek",
+        harga: 18000,
+        kategori: "makanan",
+        foto: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRoWwRgxyBOlWBupcGoNyzLAcW0uVmzMvg3uYerBuDsRw&s"
+    },
 ];
 
 /* =====================================================
@@ -55,11 +93,13 @@ const MENU = [
    ===================================================== */
 
 const KUNCI_SIMPAN = "umkm-food-keranjang";
+const KUNCI_KODE = "umkm-food-kode-member";
 
 let keranjang = [];
 let kategoriAktif = "all";
 
 const search = document.getElementById("search");
+const kolomKode = document.getElementById("kode");
 
 // Cegah karakter aneh merusak tampilan
 function aman(teks) {
@@ -83,6 +123,12 @@ function muatKeranjang() {
         );
     } catch (e) {
         keranjang = [];
+    }
+
+    try {
+        kolomKode.value = localStorage.getItem(KUNCI_KODE) || "";
+    } catch (e) {
+        // abaikan
     }
 }
 
@@ -126,6 +172,47 @@ function tampilkanMenu() {
     `).join("");
 }
 
+// ---------- HITUNG BIAYA ----------
+function kodeValid() {
+    const kode = kolomKode.value.trim().toUpperCase();
+    if (kode === "") return false;
+
+    return PENGATURAN.premium.kodeMember.some(function (k) {
+        return k.toUpperCase() === kode;
+    });
+}
+
+function hitungTotal() {
+    let subtotal = 0;
+
+    keranjang.forEach(k => {
+        const menu = MENU.find(m => m.id === k.id);
+        if (menu) subtotal += menu.harga * k.jumlah;
+    });
+
+    const member = kodeValid();
+    const bl = PENGATURAN.biayaLayanan;
+
+    let biayaLayanan = 0;
+    if (subtotal > 0 && bl.persen > 0 && !member) {
+        biayaLayanan = Math.round(subtotal * bl.persen / 100);
+        biayaLayanan = Math.max(bl.minimum, Math.min(bl.maksimum, biayaLayanan));
+    }
+
+    let diskon = 0;
+    if (subtotal > 0 && member) {
+        diskon = Math.round(subtotal * PENGATURAN.premium.diskonPersen / 100);
+    }
+
+    return {
+        subtotal: subtotal,
+        biayaLayanan: biayaLayanan,
+        diskon: diskon,
+        member: member,
+        total: subtotal + biayaLayanan - diskon
+    };
+}
+
 // ---------- KERANJANG ----------
 function tambahKeranjang(id) {
     const ada = keranjang.find(item => item.id === id);
@@ -157,7 +244,6 @@ function ubahJumlah(id, perubahan) {
 function tampilkanKeranjang() {
     const cartItems = document.getElementById("cart-items");
     let jumlahProduk = 0;
-    let totalHarga = 0;
 
     if (keranjang.length === 0) {
         cartItems.innerHTML = "<p>Keranjang masih kosong.</p>";
@@ -167,7 +253,6 @@ function tampilkanKeranjang() {
             const subtotal = menu.harga * k.jumlah;
 
             jumlahProduk += k.jumlah;
-            totalHarga += subtotal;
 
             return `
                 <div class="cart-row">
@@ -189,10 +274,42 @@ function tampilkanKeranjang() {
         }).join("");
     }
 
-    document.getElementById("total").innerText = rupiah(totalHarga);
+    const hitung = hitungTotal();
+    const bl = PENGATURAN.biayaLayanan;
+
+    document.getElementById("subtotal").innerText = rupiah(hitung.subtotal);
+
+    // Baris biaya layanan: tampilkan "Gratis" untuk member premium
+    const barisLayanan = document.getElementById("baris-layanan");
+    barisLayanan.hidden = bl.persen <= 0 || hitung.subtotal === 0;
+    document.getElementById("biaya-layanan").innerText =
+        hitung.member ? "Gratis" : rupiah(hitung.biayaLayanan);
+    document.getElementById("biaya-layanan").classList.toggle("gratis", hitung.member);
+
+    // Baris diskon premium
+    const barisDiskon = document.getElementById("baris-diskon");
+    barisDiskon.hidden = hitung.diskon === 0;
+    document.getElementById("diskon").innerText = "−" + rupiah(hitung.diskon);
+
+    // Status kode member
+    const status = document.getElementById("kode-status");
+    const kodeIsi = kolomKode.value.trim();
+    status.className = "kode-status";
+    if (kodeIsi === "") {
+        status.innerText = "Punya kode " + PENGATURAN.premium.nama + "? Masukkan di sini.";
+    } else if (hitung.member) {
+        status.innerText = "Kode valid. Bebas biaya layanan + diskon " +
+            PENGATURAN.premium.diskonPersen + "%.";
+        status.classList.add("ok");
+    } else {
+        status.innerText = "Kode tidak dikenali.";
+        status.classList.add("salah");
+    }
+
+    document.getElementById("total").innerText = rupiah(hitung.total);
     document.getElementById("cart-count").innerText = jumlahProduk;
     document.getElementById("float-count").innerText = jumlahProduk;
-    document.getElementById("float-total").innerText = rupiah(totalHarga);
+    document.getElementById("float-total").innerText = rupiah(hitung.total);
 
     document.getElementById("floating-cart")
         .classList.toggle("tampil", jumlahProduk > 0);
@@ -222,23 +339,37 @@ function checkout() {
     }
 
     if (!/^62\d{8,13}$/.test(PENGATURAN.nomorWhatsApp)) {
-        alert("Nomor WhatsApp usaha belum diisi dengan benar di app.js.");
+        alert("Nomor WhatsApp usaha belum diisi dengan benar di server.js.");
         return;
     }
 
+    const hitung = hitungTotal();
+
     let pesan = `Halo ${PENGATURAN.namaUsaha}, saya ingin memesan:\n\n`;
-    let totalHarga = 0;
 
     keranjang.forEach((k, i) => {
         const menu = MENU.find(m => m.id === k.id);
         const subtotal = menu.harga * k.jumlah;
-        totalHarga += subtotal;
 
         pesan += `${i + 1}. ${menu.nama} x ${k.jumlah} = ${rupiah(subtotal)}\n`;
     });
 
-    pesan += `\nTotal: ${rupiah(totalHarga)}`;
+    pesan += `\nSubtotal: ${rupiah(hitung.subtotal)}`;
+
+    if (hitung.member) {
+        pesan += `\nBiaya layanan: Gratis (member ${PENGATURAN.premium.nama})`;
+        pesan += `\nDiskon ${PENGATURAN.premium.nama}: -${rupiah(hitung.diskon)}`;
+    } else if (hitung.biayaLayanan > 0) {
+        pesan += `\nBiaya layanan: ${rupiah(hitung.biayaLayanan)}`;
+    }
+
+    pesan += `\nTotal: ${rupiah(hitung.total)}`;
     pesan += `\n\nNama: ${nama}`;
+
+    if (hitung.member) {
+        pesan += `\nKode member: ${kolomKode.value.trim().toUpperCase()}`;
+    }
+
     pesan += `\nMetode: Ambil di tempat`;
 
     if (jam !== "") {
@@ -260,6 +391,15 @@ function checkout() {
 // ---------- PENCARIAN DAN KATEGORI ----------
 search.addEventListener("input", tampilkanMenu);
 
+kolomKode.addEventListener("input", function () {
+    try {
+        localStorage.setItem(KUNCI_KODE, kolomKode.value);
+    } catch (e) {
+        // abaikan
+    }
+    tampilkanKeranjang();
+});
+
 document.querySelectorAll(".category").forEach(button => {
     button.addEventListener("click", function () {
         document.querySelectorAll(".category").forEach(btn => {
@@ -271,6 +411,56 @@ document.querySelectorAll(".category").forEach(button => {
         tampilkanMenu();
     });
 });
+
+// ---------- PAKET PREMIUM ----------
+function isiPremium() {
+    const p = PENGATURAN.premium;
+    const bl = PENGATURAN.biayaLayanan;
+
+    document.getElementById("premium-nama").innerText = p.nama;
+    document.getElementById("premium-harga").innerText = rupiah(p.harga);
+    document.getElementById("premium-masa").innerText = p.masaBerlaku;
+    document.getElementById("premium-diskon").innerText =
+        "Diskon " + p.diskonPersen + "% untuk setiap pesanan";
+    document.getElementById("reguler-layanan").innerText =
+        bl.persen > 0
+            ? "Biaya layanan " + bl.persen + "% (min " + rupiah(bl.minimum) +
+              ", maks " + rupiah(bl.maksimum) + ")"
+            : "Tanpa biaya layanan";
+
+    const tombol = document.getElementById("beli-premium");
+    const pesan = "Halo " + PENGATURAN.namaUsaha + ", saya ingin berlangganan paket " +
+        p.nama + " (" + rupiah(p.harga) + " " + p.masaBerlaku + ").";
+
+    tombol.href = "https://wa.me/" + PENGATURAN.nomorWhatsApp +
+        "?text=" + encodeURIComponent(pesan);
+
+    tombol.addEventListener("click", function (e) {
+        if (!/^62\d{8,13}$/.test(PENGATURAN.nomorWhatsApp)) {
+            e.preventDefault();
+            alert("Nomor WhatsApp usaha belum diisi dengan benar di server.js.");
+        }
+    });
+}
+
+// ---------- PETA ----------
+function isiPeta() {
+    const lat = PENGATURAN.lokasi.lintang;
+    const lng = PENGATURAN.lokasi.bujur;
+
+    const kiri = lng - 0.006;
+    const bawah = lat - 0.004;
+    const kanan = lng + 0.006;
+    const atas = lat + 0.004;
+
+    document.getElementById("peta").src =
+        "https://www.openstreetmap.org/export/embed.html?bbox=" +
+        [kiri, bawah, kanan, atas].join("%2C") +
+        "&layer=mapnik&marker=" + lat + "%2C" + lng;
+
+    document.getElementById("rute").href =
+        "https://www.google.com/maps/dir/?api=1&destination=" + lat + "," + lng;
+}
 
 // ---------- ISI NAMA USAHA DAN INFO ----------
 function isiInfoUsaha() {
@@ -287,6 +477,8 @@ function isiInfoUsaha() {
 
 // ---------- MULAI ----------
 isiInfoUsaha();
+isiPremium();
+isiPeta();
 muatKeranjang();
 tampilkanMenu();
 tampilkanKeranjang();
