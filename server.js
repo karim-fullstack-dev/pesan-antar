@@ -29,7 +29,7 @@ const MENU = [
     },
     {
         id: 2,
-        nama: "Nasi padang",
+        nama: "Nasi Padang",
         harga: 25000,
         kategori: "makanan",
         foto: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600"
